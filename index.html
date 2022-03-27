@@ -2,8 +2,11 @@
 <html>
 <head>
     <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>DD Calculator</title>
+    <meta content="minimum-scale=1.0, width=device-width, maximum-scale=1, user-scalable=no" name="viewport" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="/trampcalc.png">
+
+    <title>TrampCalc</title>
     <style type="text/css">
         html * {
             font-family: "Lucida Grande", monospace;
@@ -12,7 +15,14 @@
             width: 100%;
             height: 100%;
             margin:  0px;
+            padding:  0px;
             overflow: hidden;
+            overflow-x:  hidden;
+            overflow-y: hidden;
+        }
+
+        body {
+            position:  relative;
         }
 
         #viewbox {
@@ -203,7 +213,9 @@
 
         window.mode = 1; // 0=tramp, 1=mini, 2=tumbling
 
+
         window.onload = function() {
+
             let events = document.querySelectorAll('[name="event"]');
             let buttons = document.querySelectorAll(".key");
             let inputSpace = document.querySelector('#v1').children[0];
@@ -276,6 +288,15 @@
     </script>
 </head>
 <body>
+    <script>
+      document.body.addEventListener('touchmove', function(event) {
+        event.preventDefault();
+      }, {
+        passive: false,
+        useCapture: false
+      });
+    </script>
+
     <div id="switch">
         <input id="tra" name="event" type="radio" checked="" />
         <label for="tra" onclick="changeColor('skyblue')" class="left-switch">TRA</label>
