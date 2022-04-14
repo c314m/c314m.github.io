@@ -5,7 +5,7 @@
     <meta content="minimum-scale=1.0, width=device-width, maximum-scale=1, user-scalable=no" name="viewport" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" href="/trampcalc.png">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <title>TrampCalc</title>
     <style type="text/css">
         html * {
@@ -162,6 +162,18 @@
             z-index:  -1;
             box-shadow: inset 2px 0px 0px 0px black;
         }
+
+        #clear {
+            position: absolute;
+            font-size: 3em;
+            color: #ddd;
+            right: 5%;
+            top: 3%;
+        }
+
+        #clear:active {
+            filter: brightness(75%);
+        }
     </style>
 
     <script>
@@ -187,17 +199,24 @@
         }
 
         function skillFromFIG(skill) {
-            var skillStream = skill.split("");
+            if (["f", "[", "^"].includes(skill)) {
+                return skill;
+            }
 
+            var skillStream = skill.split("");
+            var forward = false;
+            if (skillStream.length > 0 && skillStream[0] == ".") {
+                skillStream.shift();
+                skill = skill.slice(1, skill.length)
+                forward = true;
+            }
             // hardcodes
             if (parseInt(skillStream[0]) < 8 && skillStream.length == 2 && isNaN(parseInt(skillStream[1]))) {
                 skillStream.splice(1, 0, "0");
             }
 
-            console.log(skill);
             if (skill.length == 2 && parseInt(skill) < 50 && parseInt(skill) >= 40) {
                 skillStream.push("/");
-                console.log(skillStream);
             }
 
             let position = skillStream.pop();
@@ -228,13 +247,13 @@
             return {
                 position: position,
                 flips: parseInt(flipBuffer),
-                twists: parseInt(skillStream.reduce((a,b)=>parseInt(a)+parseInt(b)))
+                twists: parseInt(skillStream.reduce((a,b)=>parseInt(a)+parseInt(b))),
+                forward: forward
             };
 
         }
 
         function dmtDD(skillObj) {
-            console.log(skillObj);
             let fullFlips = Math.floor(skillObj.flips/4);
 
             var dd = fullFlips * 0.5;
@@ -274,17 +293,70 @@
             return dd;
         }
 
+        function tumblingDD(skillObj) {
+            if (skillObj == "f" || skillObj == "[") {
+                return 0.1;
+            } else if (skillObj == "^") {
+                return 0.2;
+            }
+
+            dd = Math.floor(skillObj.flips/4.0)/2;
+            dd += skillObj.forward ? Math.floor(skillObj.flips/4.0) * 0.1 : 0.0;
+
+            if (skillObj.position == "<") {
+                dd += (Math.floor(skillObj.flips / 12) * 0.1 + 0.1);
+            } else if (skillObj.position == "/") {
+                dd += 2**(Math.floor(skillObj.flips/4.0) - 1) / 10;
+            }
+
+            if (skillObj.flips < 8) {
+                var twist = 0.0;
+                while (twist < skillObj.twists) {
+                    if (twist > 6) {
+                        dd += 0.4;
+                    } else if (twist > 4) {
+                        dd += 0.3;
+                    } else {
+                        dd += 0.2;
+                    }
+                    twist += 1;
+                }
+                if (twist > 0) {
+                    dd -= 0.1; // janky
+                }
+            } else if (skillObj.flips < 12) {
+                var twist = 0.0;
+                while (twist < skillObj.twists) {
+                    dd += (Math.floor(twist/2)+1)*0.1;
+                    twist += 1;
+                }
+            } else {
+                var twist = 0.0;
+                while (twist < skillObj.twists) {
+                    if (twist > 2) {
+                        dd += 0.4;
+                    } else {
+                        dd += 0.3;
+                    }
+                    twist += 1;
+                }
+            }
+
+            return dd * Math.floor(skillObj.flips/4.0);
+        }
+
         window.mode = 1; // 0=tramp, 1=mini, 2=tumbling
         window.skills = []; // [ [1, "800<"], [-1, "42/"] ] is same as 800<-42/
 
         function getDD(skillObj) {
+            console.log("skill ", skillObj);
             switch (window.mode) {
                 case 0:
                     return trampDD(skillObj);
                 case 1: 
                     return dmtDD(skillObj);
                 case 2:
-                    return -1;
+                    return tumblingDD(skillObj);
                 default:
                     return NaN;
             }
@@ -314,7 +386,6 @@
         }
 
         function updateInput(output) {
-            console.log(window.skills);
             let inputSpace = document.querySelector('#vcontainer');
             inputSpace.innerHTML = "";
 
@@ -334,7 +405,6 @@
                 sign.classList.add("skillSign");
                 fig.classList.add("skillFig");
 
-                console.log("sex ",skill);
                 sign.innerText = skill[0] != -1 ? (i == 0 ? " " : "+") : "-";
                 fig.innerText = skill[1];
                 fig.style.color = "#aaa";
@@ -343,7 +413,7 @@
 
                 let out = document.createElement("div");
                 let value = output[i];
-                console.log(output);
+
                 out.classList.add("ddField");
                 out.style.color = "#aaa";
                 out.innerText = isNaN(value) ? "0.0" : value.toFixed(1);
@@ -395,6 +465,11 @@
                 }
             });
 
+            document.querySelector("#clear").addEventListener("click", function() {
+                window.skills = [];
+                updateInput([]);
+            })
+
 
             buttons.forEach(function(a) {
                 a.addEventListener("click", function() {
@@ -437,14 +512,12 @@
                     } while (false); // abusing break
 
                     updateInput(window.skills.map(function(s) {
-                        console.log(s);
 
                         let skill = skillFromFIG(s[1]);
                         if (skill == undefined) {
                             return NaN;
                         } else {
                             let ret = getDD(skill) * s[0];
-                            console.log(s[0]);
                             return ret;
                         }
                     }));
@@ -478,6 +551,7 @@
     <div id="viewbox">
         <div id="bg1">&nbsp;</div>
         <div id="bg2">&nbsp;</div>
+        <span id="clear" class="fa fa-trash-o"></span>
         <div id="vcontainer"></div>
     </div>
 
@@ -497,7 +571,7 @@
         <div class="key"><span style="margin:auto">2</span></div>
         <div class="key"><span style="margin:auto">3</span></div>
         <div class="key"><span style="margin:auto">-</span></div>
-        <div class="key"><span style="margin:auto">Clear</span></div>
+        <div class="key tum"><span style="margin:auto">.</span></div>
         <div class="key"><span style="margin:auto">&#8226;</span></div>
         <div class="key"><span style="margin:auto">&lt;</span></div>
         <div class="key"><span style="margin:auto">&#47;</span></div>
