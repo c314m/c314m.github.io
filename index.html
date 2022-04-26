@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>TrampCalc - Trampoline & Tumbling Difficulty Calculator</title>
+	<meta name="description" content="TrampCalc is the ultimate tool for calculating the Degree of Difficulty (DD) of skills from the gymnastic events Trampoline, Double Mini Trampoline (DMT), and Tumbling"/>
+
+	<style>
+        html {
+            font-family: "Lucida Grande", monospace;
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        h1 {
+        	text-align: center;
+        	color: black;
+        	width: 100%;
+        	flex: 2;
+        }
+        #btn {
+        	text-align: center;
+        	background: green;
+        	margin: auto;
+        	width: 6em;
+        	font-size: 3em;
+        	font-style: none;
+        	color:  #333;
+        	text-decoration: none;
+        	border-radius: 10px;
+        	border: 2px solid #333;
+        }
+
+        p {
+        	margin: 3em;
+        	font-size: 1.2em;
+        }
+	</style>
+
+	<script>
+		window.onload = function() {
+			a = Math.random() * 100;
+			document.body.style.backgroundColor = a > 66 ? "skyblue" : a > 33 ? "deeppink" : "lightgreen";
+			a += ((Math.random() > 0.5) ? 33 : 66);
+			a %= 100;
+			document.querySelector("#btn").style.backgroundColor = a > 66 ? "skyblue" : a > 33 ? "deeppink" : "lightgreen";
+		}
+	</script>
+</head>
+<body>
+	<h1>TrampCalc - T&T DD calculator</h1>
+	<a href="/app/" id="btn">Go&nbsp;to&nbsp;App</a>
+	<p>
+		Ever get annoyed by constantly having to do comp cards all the time? Or maybe you've wanted to quickly check the difficulty difference between two skills? This new tool can do that and more!<br/><br/>TrampCalc supports all three events: Trampoline, Double Mini, and Tumbling. The calculator has been tested on all skills with DD calculations provided and is based on the official FIG gymnastics difficulty rules.<br/><br/>TrampCalc lets you add skills together for calculating full routines, and lets you subtract skills for calculating how much more DD a certain skill or routine is.
+	</p>
+	<p style="font-size:1em">TrampCalc is brought to you by elite athlete and programmer Camden Weaver. (instagram @camden314tnt)</footer>
+</body>
+</html>
