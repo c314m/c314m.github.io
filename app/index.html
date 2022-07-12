@@ -198,46 +198,69 @@
             }
         }
 
+        // this is a mess...
         function skillFromFIG(skill) {
+            // tumbling skills, hardcode
             if (["f", "[", "^"].includes(skill)) {
                 return skill;
             }
 
             var skillStream = skill.split("");
+
+            // for tumbling, forward skills
             var forward = false;
             if (skillStream.length > 0 && skillStream[0] == ".") {
                 skillStream.shift();
                 skill = skill.slice(1, skill.length)
                 forward = true;
             }
-            // hardcodes
-            if (parseInt(skillStream[0]) < 8 && skillStream.length == 2 && isNaN(parseInt(skillStream[1]))) {
-                skillStream.splice(1, 0, "0");
-            }
 
-            if (skill.length == 2 && parseInt(skill) < 50 && parseInt(skill) >= 40) {
-                skillStream.push("/");
-            }
-
-            let position = skillStream.pop();
+            // get position from end
+            var position = skillStream.pop();
             if (!["/", "<", "•"].includes(position)) {
-                return undefined;
+                skillStream.push(position);
+
+                // hardcode straight as default for flips under double
+                if (parseInt(skill) < 80) {
+                    position = "/";
+                } else {
+                    return undefined;
+                }
+            }
+
+            // flips between single and double get a default 0 twist
+            if (parseInt(skill) >= 4 && parseInt(skill) < 8) {
+                skillStream.push("0");
             }
 
             var flipBuffer = "";
-
             do {
                 flipBuffer += skillStream.shift();
-                let flip = parseInt(flipBuffer);
-                if (isNaN(flip)) {
-                    return undefined;
-                } else if (Math.floor(flip/4) == skillStream.length) {
-                    break;
-                } else if (Math.floor(flip/4) > skillStream.length) {
+
+                let quarterFlip = parseInt(flipBuffer);
+                let fullFlip = Math.floor(quarterFlip/4);
+                // bad flip
+                if (isNaN(quarterFlip)) {
                     return undefined;
                 }
-            } while(true);
 
+                // test if all twists can be accompanied by a flip
+                let diff = Math.abs(skillStream.length - fullFlip);
+
+                // if skill doesn't go to feet, give leeway for one less possible twist
+                if (diff == 0 || (quarterFlip % 4 && diff <= 1)) {
+                    break;
+                } else if (fullFlip > skillStream.length) {
+                    return undefined;
+                }
+            } while(skillStream.length);
+
+            // pad twists for flips that don't go to feet
+            if (Math.ceil(parseInt(flipBuffer)/4) > skillStream.length) {
+                skillStream.push("0");
+            }
+
+            // sanity check
             for (var i=0; i<skillStream.length; i++) {
                 if (isNaN(parseInt(skillStream[i]))) {
                     return undefined;
@@ -254,27 +277,41 @@
         }
 
         function dmtDD(skillObj) {
-            let fullFlips = Math.floor(skillObj.flips/4);
+            // everything must land on feet
+            if (skillObj.flips % 4) {
+                return NaN;
+            }
 
+            let fullFlips = Math.floor(skillObj.flips/4);
+            // Each completed 360º of somersault: 0.5
             var dd = fullFlips * 0.5;
-            if (fullFlips < 2) {
+
+            if (fullFlips < 2) { // Single somersaults
+                // pike / straight, without twist
                 if (skillObj.twists == 0 && skillObj.position != "•") {
                     dd += 0.1;
                 }
+
+                // Twists - single somersaults
                 var twist = 0.0;
                 while (twist < skillObj.twists/2) {
                     dd += (2 + Math.floor(twist))/10.0;
                     twist += 0.5;
                 }
-            } else {
+            } else { // More than single somersaults
+
+                // Double/Triple/Etc. somersault: pike / straight
                 var bonus = 0;
                 if (skillObj.position == "<") {
-                    bonus = (2 ** fullFlips)/10.0;
+                    bonus = (2 ** fullFlips)/10.0; // assuming it is exponential
                 } else if (skillObj.position == "/") {
-                    bonus = (2 ** fullFlips)/5.0;
+                    bonus = (2 ** fullFlips)/5.0; // assuming it is exponential
                 }
 
-                dd += 2 * 0.1 * skillObj.twists; //!! this thing sucks
+                // Double/Triple/Etc. somersault each 1/2 twist
+                dd += 0.2 * skillObj.twists;
+
+                // Add all somersault and twist values, double/triple/etc. that amount, and then add the position bonus
                 dd = dd * fullFlips + bonus;
             }
 
@@ -297,6 +334,11 @@
         }
 
         function tumblingDD(skillObj) {
+            // everything must land on feet
+            if (skillObj.flips % 4) {
+                return NaN;
+            }
+
             if (skillObj == "f" || skillObj == "[") {
                 return 0.1;
             } else if (skillObj == "^") {
@@ -408,7 +450,7 @@
                 sign.classList.add("skillSign");
                 fig.classList.add("skillFig");
 
-                sign.innerText = skill[0] != -1 ? (i == 0 ? " " : "+") : "-";
+                sign.innerText = skill[0] != -1 ? (i == 0 ? " " : "+") : "-";
                 fig.innerText = skill[1];
                 fig.style.color = "#aaa";
 
@@ -419,8 +461,14 @@
 
                 out.classList.add("ddField");
                 out.style.color = "#aaa";
-                out.innerText = isNaN(value) ? "0.0" : value.toFixed(1);
-                if (!isNaN(value)) {
+
+                if (isNaN(value)) {
+                    out.innerText = "0.0";
+                    out.style.color = "#aa0000";
+                    fig.style.color = "#aa0000";
+                } else {
+                    out.innerText = value.toFixed(1);
+                    out.style.color = "#aaa";
                     total += value;
                 }
 
@@ -439,7 +487,7 @@
             sign.classList.add("skillSign");
             fig.classList.add("skillFig");
 
-            sign.innerText = " ";
+            sign.innerText = " ";
             fig.innerText = "=";
 
             inputSpace.appendChild(entry);
