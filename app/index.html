@@ -322,7 +322,7 @@
             let fullFlips = Math.floor(skillObj.flips/4);
             var dd = 0.1*skillObj.flips + 0.1*fullFlips + 0.1*skillObj.twists;
 
-            if (skillObj.twists == 0 && skillObj.flips < 8 && skillObj.position != "•") {
+            if (skillObj.twists == 0 && skillObj.flips > 3 && skillObj.flips < 8 && skillObj.position != "•") {
                 dd += 0.1;
             } else if (skillObj.flips >= 8 && skillObj.position != "•") {
                 dd += fullFlips*0.1;
